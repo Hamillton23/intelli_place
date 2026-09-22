@@ -1,5 +1,5 @@
 # 🚀 IntelliPlace — Intelligent Recruitment Analytics Platform
-
+ 
 ## 📌 Overview
 
 **IntelliPlace** is a full-stack recruitment analytics and placement automation platform designed to streamline campus hiring operations for educational institutions. The platform centralizes student management, job postings, eligibility screening, application tracking, selection workflows, and communication into a unified system.
