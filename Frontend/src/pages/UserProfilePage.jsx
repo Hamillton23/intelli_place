@@ -1,12 +1,39 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { RiLockPasswordLine } from "react-icons/ri";
 import Sidebar from "../components/Sidebar";
 import { useData } from '../context/DataContext.jsx';
+import { analyzeResume } from '../services/analyzeResume.services.js';
 
 function UserProfilePage() {
   const { user: userData = {} } = useData();
   const navigate = useNavigate();
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiError, setAiError] = useState("");
+
+  const handleAnalyzeResume = async () => {
+    try {
+      setAiLoading(true);
+      setAiError("");
+
+      const response = await analyzeResume();
+
+      if (response?.success) {
+        setAiAnalysis(response.analysis);
+      } else {
+        setAiError(response?.message || "Unable to analyze resume");
+      }
+    } catch (error) {
+      setAiError(
+        error?.response?.data?.message ||
+        "Failed to analyze resume. Please try again."
+      );
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
 
   // Helper for opening resume
   const openResume = () => {
@@ -81,12 +108,76 @@ function UserProfilePage() {
                 Resume
               </button>
             )}
+            {!userData?.isAdmin && (
+              <button
+                onClick={handleAnalyzeResume}
+                disabled={aiLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 disabled:opacity-50 transition-all"
+              >
+                {aiLoading ? "Analyzing..." : "✨ Analyze Resume with AI"}
+              </button>
+            )}
             {userData?._id && (
               <Link to={`/updateUser/${userData?._id}`} className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg shadow hover:bg-gray-700 transition-all">
                 Edit Profile
               </Link>
             )}
           </div>
+
+          {aiError && (
+            <div className="w-full mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {aiError}
+            </div>
+          )}
+
+          {aiAnalysis && (
+            <div className="w-full mt-8 bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <h2 className="text-2xl font-bold text-purple-800 mb-4">
+                AI Resume Analysis
+              </h2>
+
+              <div className="mb-5">
+                <h3 className="font-semibold text-gray-800 mb-2">Summary</h3>
+                <p className="text-gray-700">{aiAnalysis.summary}</p>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="font-semibold text-gray-800 mb-2">Strengths</h3>
+                <ul className="list-disc pl-5 text-gray-700">
+                  {aiAnalysis.strengths.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="font-semibold text-gray-800 mb-2">Areas to Improve</h3>
+                <ul className="list-disc pl-5 text-gray-700">
+                  {aiAnalysis.weaknesses.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mb-5">
+                <h3 className="font-semibold text-gray-800 mb-2">Strongest Projects</h3>
+                <ul className="list-disc pl-5 text-gray-700">
+                  {aiAnalysis.strongestProjects.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-800 mb-2">Improvement Suggestions</h3>
+                <ul className="list-disc pl-5 text-gray-700">
+                  {aiAnalysis.improvementSuggestions.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Sidebar>

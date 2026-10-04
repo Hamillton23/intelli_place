@@ -137,7 +137,8 @@ const { CommentsRouter } = require('./routes/comments.route.js');
 const { OpeningsRouter } = require('./routes/openings.route.js');
 const { SelectionRouter } = require('./routes/selections.route.js');
 const { BranchRouter } = require('./routes/branch.route.js');
-const { jobInterestRouter } = require('./routes/jobInterest.route.js');
+const { jobInterestRouter } = require('./routes/jobInterest.route.js')
+const { aiRouter } = require('./routes/ai.route.js');
 
 
 //router declaration
@@ -150,6 +151,7 @@ server.use('/api/selection',SelectionRouter)
 // server.use('/api/selection',SelectionRouter)
 server.use('/api/branch',BranchRouter)
 server.use('/api/job-interest', jobInterestRouter)
+server.use('/api/ai', aiRouter)
 
 
 // // -------------------DEployment code------
