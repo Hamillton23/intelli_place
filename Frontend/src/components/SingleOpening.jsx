@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import JobInterestButtons from "./JobInterestButtons";
 import { useData } from '../context/DataContext.jsx';
 import { FaInfoCircle } from 'react-icons/fa';
-import { matchResumeToOpening } from '../services/aiMatch.services.js';
+import { matchResumeToOpening, explainResumeMatch } from '../services/aiMatch.services.js';
 
 function SingleOpening({ className = "", obj, children }) {
   const { user } = useData();
   const [hasApplied, setHasApplied] = useState(false); // Track if the user has applied
   const [aiLoading, setAiLoading] = useState(false);
   const [aiMatch, setAiMatch] = useState(null);
+  const [aiExplaining, setAiExplaining] = useState(false);
   const [aiError, setAiError] = useState("");
 
   // Eligibility logic
@@ -77,6 +78,21 @@ function SingleOpening({ className = "", obj, children }) {
     }
   };
 
+  const handleAiExplain = async () => {
+    if (!obj?._id) return;
+    try {
+      setAiExplaining(true);
+      setAiError("");
+      const response = await explainResumeMatch(obj._id);
+      if (response?.success) setAiMatch(response.match);
+      else setAiError(response?.message || "Unable to generate explanation");
+    } catch (error) {
+      setAiError(error?.response?.data?.message || "Unable to generate AI explanation");
+    } finally {
+      setAiExplaining(false);
+    }
+  };
+
   // Notification logic: show badge if new or updated in last 24 hours
   let notificationBadge = null;
   const now = Date.now();
@@ -138,6 +154,15 @@ function SingleOpening({ className = "", obj, children }) {
           >
             {aiLoading ? "Matching..." : "✨ AI Match"}
           </button>
+          {aiMatch && (
+            <button
+              onClick={handleAiExplain}
+              disabled={aiExplaining}
+              className="ml-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {aiExplaining ? "Explaining..." : "AI Explain Match"}
+            </button>
+          )}
           {aiError && <div className="mt-2 text-sm text-red-600">{aiError}</div>}
           {aiMatch && (
             <div className="mt-3 bg-purple-50 border border-purple-100 rounded-lg p-4 text-sm">
@@ -149,6 +174,21 @@ function SingleOpening({ className = "", obj, children }) {
                 <ul className="list-disc pl-5 mt-1 text-red-600">
                   {aiMatch.eligibility.reasons.map((reason, index) => <li key={index}>{reason}</li>)}
                 </ul>
+              )}
+              {aiMatch.explanation && (
+                <div className="mt-3 space-y-2">
+                  <p><b>Assessment:</b> {aiMatch.explanation.overallAssessment}</p>
+                  {aiMatch.explanation.matchingStrengths?.length > 0 && (
+                    <div><b>Matching strengths:</b><ul className="list-disc pl-5">{aiMatch.explanation.matchingStrengths.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
+                  )}
+                  {aiMatch.explanation.gaps?.length > 0 && (
+                    <div><b>Gaps:</b><ul className="list-disc pl-5">{aiMatch.explanation.gaps.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
+                  )}
+                  <p><b>Eligibility:</b> {aiMatch.explanation.eligibilityNote}</p>
+                  {aiMatch.explanation.nextSteps?.length > 0 && (
+                    <div><b>Next steps:</b><ul className="list-disc pl-5">{aiMatch.explanation.nextSteps.map((x, i) => <li key={i}>{x}</li>)}</ul></div>
+                  )}
+                </div>
               )}
             </div>
           )}
