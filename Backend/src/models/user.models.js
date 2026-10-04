@@ -121,6 +121,14 @@ const UserSchema = new Schema(
             type: Number,
             default: 0
         },
+        aiEmbedding: {
+            type: [Number],
+            default: []
+        },
+        aiEmbeddingUpdatedAt: {
+            type: Date,
+            default: null
+        },
         isEmailVerified: {
             type: Boolean,
             default: false

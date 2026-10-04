@@ -46,7 +46,9 @@ const OpeningSchema = new Schema({
     },
     testDateAndTime: { type: Date, default: null },
     applicationDeadline: { type: Date, required: true },
-    additionalInfo: { type: String, default:"" }
+    additionalInfo: { type: String, default:"" },
+    aiEmbedding: { type: [Number], default: [] },
+    aiEmbeddingUpdatedAt: { type: Date, default: null }
 }, {
     timestamps: true,
     toJSON: { virtuals: true },

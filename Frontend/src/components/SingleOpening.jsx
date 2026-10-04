@@ -3,10 +3,14 @@ import { Link } from "react-router-dom";
 import JobInterestButtons from "./JobInterestButtons";
 import { useData } from '../context/DataContext.jsx';
 import { FaInfoCircle } from 'react-icons/fa';
+import { matchResumeToOpening } from '../services/aiMatch.services.js';
 
 function SingleOpening({ className = "", obj, children }) {
   const { user } = useData();
   const [hasApplied, setHasApplied] = useState(false); // Track if the user has applied
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMatch, setAiMatch] = useState(null);
+  const [aiError, setAiError] = useState("");
 
   // Eligibility logic
   let eligibilityMsg = null;
@@ -57,6 +61,21 @@ function SingleOpening({ className = "", obj, children }) {
       );
     }
   }
+
+  const handleAiMatch = async () => {
+    if (!obj?._id) return;
+    try {
+      setAiLoading(true);
+      setAiError("");
+      const response = await matchResumeToOpening(obj._id);
+      if (response?.success) setAiMatch(response.match);
+      else setAiError(response?.message || "Unable to calculate match");
+    } catch (error) {
+      setAiError(error?.response?.data?.message || "Unable to calculate semantic match");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Notification logic: show badge if new or updated in last 24 hours
   let notificationBadge = null;
@@ -110,6 +129,32 @@ function SingleOpening({ className = "", obj, children }) {
       {obj?.additionalInfo && (
         <div className="text-sm text-gray-700 mb-2"><b>Info:</b> {obj?.additionalInfo}</div>
       )}
+      {user && !user.isAdmin && !isPlaced && obj?._id && (
+        <div className="mt-3 border-t pt-3">
+          <button
+            onClick={handleAiMatch}
+            disabled={aiLoading}
+            className="px-3 py-2 rounded-lg bg-purple-600 text-white text-sm hover:bg-purple-700 disabled:opacity-50"
+          >
+            {aiLoading ? "Matching..." : "✨ AI Match"}
+          </button>
+          {aiError && <div className="mt-2 text-sm text-red-600">{aiError}</div>}
+          {aiMatch && (
+            <div className="mt-3 bg-purple-50 border border-purple-100 rounded-lg p-4 text-sm">
+              <div className="font-semibold text-purple-900">Semantic Match: {aiMatch.similarityPercentage}%</div>
+              <div className={aiMatch.eligibility?.eligible ? "text-green-700" : "text-red-700"}>
+                Formal Eligibility: {aiMatch.eligibility?.eligible ? "Eligible" : "Not eligible"}
+              </div>
+              {aiMatch.eligibility?.reasons?.length > 0 && (
+                <ul className="list-disc pl-5 mt-1 text-red-600">
+                  {aiMatch.eligibility.reasons.map((reason, index) => <li key={index}>{reason}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2 items-center mt-2">
         {window.localStorage.getItem("isAdmin") !== "true" && !isPlaced && (
           <>
